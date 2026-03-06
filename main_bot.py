@@ -1,6 +1,5 @@
 import os
 import sys
-os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
 os.environ["PYTHONUNBUFFERED"] = "1"
 
 from playwright.sync_api import sync_playwright
@@ -16,81 +15,88 @@ class StoreBot:
 
     def get_user_data(self, count):
         users = []
+        prenoms = ["Mohamed", "Amine", "Yacine", "Karim", "Sofiane", "Walid", "Ayoub", "Hamza", "Tarek", "Zaki"]
+        noms = ["Saidi", "Benali", "Toumi", "Dahmani", "Zergui", "Mansouri", "Bouzid", "Haddad", "Slimani"]
+        
         for i in range(count):
+            nom_complet = f"{random.choice(prenoms)} {random.choice(noms)}"
             users.append({
-                "nom": f"Test Edu {random.randint(100, 999)}",
+                "nom": nom_complet,
                 "telephone": f"055{random.randint(1000000, 9999999)}",
                 "adresse_generique": f"Cite Test {random.randint(1, 100)}, Alger"
             })
         return users
 
-    def execute_stress_test(self, url, max_orders=5):
+    def execute_stress_test(self, url, max_orders=1):
         users = self.get_user_data(max_orders)
         if not users: return
 
-        log(f"\n🚀 DÉMARRAGE DU BOT (STEALTH CLOUD) SUR : {url}")
+        log(f"\n🚀 DÉMARRAGE DU TEST LOCAL (HUMAN-LIKE) SUR : {url}")
 
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                headless=True, 
-                args=[
-                    "--no-sandbox", 
-                    "--disable-setuid-sandbox", 
-                    "--disable-blink-features=AutomationControlled", # ⚠️ LE FIX ANTI-BOT EST ICI ⚠️
-                    "--disable-dev-shm-usage"
-                ]
+                headless=True, # Mkhalyinha False lel test
+                args=["--disable-blink-features=AutomationControlled"]
             ) 
             
             for i in range(max_orders):
                 user = users[i]
                 context = browser.new_context(
-                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                    viewport={"width": 1920, "height": 1080}
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0",
+                    viewport={"width": 1280, "height": 720}
                 )
                 
-                # ⚠️ LE SECRET DU CLOUD (INJECTION JS BACH Y-T5EBA L'BOT) ⚠️
                 context.add_init_script("""
-                    Object.defineProperty(navigator, 'webdriver', {
-                        get: () => undefined
-                    })
+                    Object.defineProperty(navigator, 'webdriver', { get: () => undefined })
                 """)
                 
                 page = context.new_page()
-                
                 log("-" * 50)
                 log(f"▶️ [COMMANDE {i+1}/{max_orders}] Remplissage en cours...")
 
                 try:
                     page.goto(url, wait_until="domcontentloaded", timeout=45000)
                     
-                    for _ in range(3):
-                        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                        time.sleep(1)
-
-                    # 1. NOM
-                    name_input = page.locator("input[name*='name' i], input[placeholder*='اسم' i], input[placeholder*='nom' i]").first
+                    # SCROLLING HUMAIN (B'la39el)
+                    for j in range(1, 6):
+                        page.evaluate(f"window.scrollTo(0, document.body.scrollHeight * ({j} / 5))")
+                        time.sleep(random.uniform(0.5, 1.2)) # Ystena chwiya bin kol scroll
+                    
+                    # 1. NOM (Typing Humain)
+                    name_input = page.locator("input:not([type='tel']):not([name*='phone' i]):not([id*='phone' i]):not([placeholder*='هاتف' i])[name*='name' i], input:not([type='tel'])[placeholder*='اسم' i], input:not([type='tel'])[placeholder*='nom' i]").first
                     if name_input.count() > 0:
                         name_input.scroll_into_view_if_needed()
-                        name_input.fill(user["nom"])
+                        name_input.click() # Y-kiliki f' l'khana qbel ma yekteb (kima l'insan)
+                        time.sleep(random.uniform(0.3, 0.8)) # Y-khmem chwiya
+                        name_input.press_sequentially(user["nom"], delay=random.randint(150, 250)) # Yekteb b'la39el w delay عشوائي
+                        log(f"   👁️ [RADAR] Nom injecté : {user['nom']}")
                     
-                    # 2. TÉLÉPHONE
-                    phone_input = page.locator("input[type='tel'], input[name*='phone' i], input[placeholder*='هاتف' i], input[placeholder*='téléphone' i]").first
+                    time.sleep(random.uniform(0.5, 1.5)) # Pause bin l'khana w lokhra
+
+                    # 2. TÉLÉPHONE (Typing Humain)
+                    phone_input = page.locator("input[type='tel'], input[placeholder*='هاتف' i], input[placeholder*='تليفون' i], input[name*='phone' i], input[id*='phone' i]").first
                     if phone_input.count() > 0:
                         phone_input.scroll_into_view_if_needed()
                         phone_input.evaluate("el => el.value = ''") 
                         phone_input.click()
-                        phone_input.press_sequentially(user["telephone"], delay=100)
+                        time.sleep(random.uniform(0.3, 0.8))
+                        phone_input.press_sequentially(user["telephone"], delay=random.randint(150, 250))
                         phone_input.blur()
-                        log(f"   👁️ [RADAR] Tél injecté: {user['telephone']}")
+                        log(f"   👁️ [RADAR] Tél injecté : {user['telephone']}")
 
-                    # 3. UNIVERSEL (REMPLIR TOUT LE RESTE)
+                    time.sleep(random.uniform(0.5, 1.5))
+
+                    # 3. UNIVERSEL (Typing Humain)
                     all_inputs = page.locator("input[type='text'], input:not([type]), textarea")
                     for j in range(all_inputs.count()):
                         try:
                             inp = all_inputs.nth(j)
-                            if inp.is_visible() and not inp.input_value():
+                            if inp.is_visible() and not inp.input_value(): 
                                 inp.scroll_into_view_if_needed()
-                                inp.fill(user["adresse_generique"])
+                                inp.click()
+                                time.sleep(random.uniform(0.2, 0.5))
+                                inp.press_sequentially(user["adresse_generique"], delay=random.randint(100, 200))
+                                time.sleep(random.uniform(0.3, 0.7))
                         except:
                             pass
 
@@ -99,12 +105,13 @@ class StoreBot:
                         try:
                             sel = all_selects.nth(j)
                             if sel.is_visible():
+                                time.sleep(random.uniform(0.5, 1.0))
                                 sel.select_option(index=1) 
                         except:
                             pass
 
-                    log("   ✅ [RADAR] Formulaire rempli (Mode Stealth).")
-                    time.sleep(2) 
+                    log("   ✅ [RADAR] Formulaire rempli avec succès.")
+                    time.sleep(random.uniform(1.5, 3.0)) # Y-khmem qbel ma y-kiliki "Commander"
 
                     # 4. CLIC FINAL
                     submit_btn = page.locator("button:has-text('شراء'), button:has-text('طلب'), button:has-text('تأكيد'), button:has-text('Commander'), input[type='submit']").last
@@ -113,33 +120,33 @@ class StoreBot:
 
                     if submit_btn.is_visible():
                         submit_btn.scroll_into_view_if_needed()
-                        
-                        # Clic JavaScript bach may-tbloquach
-                        submit_btn.evaluate("el => el.click()")
-                        log("   🖱️ Frappe du bouton Commander...")
+                        # Simulation d'un vrai clic de souris (plus naturel que javascript click)
+                        submit_btn.hover()
+                        time.sleep(random.uniform(0.2, 0.5))
+                        submit_btn.click() 
+                        log("   🖱️ Clic effectué !")
                         
                         time.sleep(8) 
                         
                         url_apres = page.url
                         page_text = page.content().lower()
 
-                        log(f"   🔎 [DEBUG] URL finale atteinte: {url_apres}")
-
-                        # VÉRIFICATION STRICTE (Plus de faux positifs)
-                        if "thank" in url_apres or "شكرا" in page_text or "merci" in page_text or "success" in page_text or "receipt" in url_apres:
-                            log(f"   🟢 [RÉSULTAT {i+1}] : COMMANDE VALIDÉE ET ENVOYÉE 100% !")
+                        if url_apres != url or "thank" in url_apres or "شكرا" in page_text or "merci" in page_text:
+                            log(f"   🟢 [RÉSULTAT] : SUCCÈS ! Commande Validée !")
                         else:
-                            log(f"   🔴 [RÉSULTAT {i+1}] : ÉCHEC. Bloqué par l'anti-bot du site (Cloudflare).")
+                            log(f"   🔴 [RÉSULTAT] : ÉCHEC. L'URL n'a pas bougé.")
                     else:
                         log(f"   🔴 [ERREUR] Bouton invisible.")
 
                 except Exception as e:
-                    log(f"   🔴 [ERREUR TECHNIQUE {i+1}] : {str(e)}")
+                    log(f"   🔴 [ERREUR TECHNIQUE] : {str(e)}")
                 finally:
+                    time.sleep(5)
                     context.close() 
-                
-                if i < max_orders - 1:
-                    time.sleep(random.randint(4, 7))
             
             browser.close()
-            log("\n🏁 MISSION TERMINÉE.")
+
+if __name__ == "__main__":
+    URL_CIBLE = "https://libyaworld.youcan.store/products/salatlibia" 
+    bot = StoreBot()
+    bot.execute_stress_test(url=URL_CIBLE, max_orders=1)
