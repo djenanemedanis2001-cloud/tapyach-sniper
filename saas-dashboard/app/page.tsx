@@ -28,7 +28,7 @@ export default function SniperDashboard() {
     setStatus("IN_PROGRESS");
 
     try {
-      const res = await fetch('http://localhost:8000/launch', {
+      const res = await fetch('https://tapyach-api.onrender.com/launch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url, orders: orders })
