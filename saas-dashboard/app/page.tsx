@@ -28,6 +28,7 @@ export default function SniperDashboard() {
     setStatus("IN_PROGRESS");
 
     try {
+      // LE FIX EST ICI : On pointe vers l'API Render !
       const res = await fetch('https://tapyach-api.onrender.com/launch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -51,7 +52,7 @@ export default function SniperDashboard() {
         setIsLaunching(false);
       }
     } catch (err) {
-      alert("❌ Serveur API Hors-ligne. Vérifiez que server.py tourne.");
+      alert("❌ Serveur API Hors-ligne. Vérifiez Render.");
       setStatus("FAILED");
       setIsLaunching(false);
     }
@@ -61,7 +62,6 @@ export default function SniperDashboard() {
     <div className="min-h-screen bg-[#050505] text-white p-4 md:p-8 font-sans selection:bg-orange-500/30">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* --- HEADER --- */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-8">
           <div>
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2">
@@ -70,7 +70,7 @@ export default function SniperDashboard() {
               </div>
               <h1 className="text-3xl font-black tracking-tighter uppercase italic">Tapyach <span className="text-orange-600">Sniper</span></h1>
             </motion.div>
-            <p className="text-slate-500 text-sm mt-2 font-medium">Expert Load Testing & Pixel Firing System v4.0</p>
+            <p className="text-slate-500 text-sm mt-2 font-medium">Educational Load Testing System v4.0</p>
           </div>
           
           <div className="flex items-center gap-3 bg-white/5 p-1.5 rounded-2xl border border-white/10">
@@ -83,19 +83,14 @@ export default function SniperDashboard() {
           </div>
         </header>
 
-        {/* --- MAIN STATS --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard title="Total Injections" value="1,284" icon={<Rocket className="text-orange-500" />} change="+12% today" />
           <StatCard title="Success Rate" value="99.2%" icon={<CheckCircle2 className="text-emerald-500" />} change="Perfect sync" />
           <StatCard title="Bypassed Shields" value="482" icon={<ShieldAlert className="text-blue-500" />} change="Anti-bot active" />
         </div>
 
-        {/* --- CONTROL CENTER --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
           <div className="lg:col-span-1 bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            
             <div className="flex items-center gap-2 mb-6">
               <Globe size={18} className="text-orange-500"/> 
               <h3 className="text-lg font-bold">Target Configuration</h3>
@@ -136,25 +131,17 @@ export default function SniperDashboard() {
                     <span>Injecting Packets...</span>
                     <span>{progress}%</span>
                   </div>
-                  {/* Custom Progress Bar */}
                   <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-orange-500 transition-all duration-200 ease-out" 
-                      style={{ width: `${progress}%` }} 
-                    />
+                    <div className="h-full bg-orange-500 transition-all duration-200 ease-out" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* --- ANALYTICS CHART --- */}
           <div className="lg:col-span-2 bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 overflow-hidden relative">
             <div className="flex justify-between items-center mb-8">
               <h3 className="font-bold flex items-center gap-2"><BarChart3 size={18} className="text-orange-500"/> Real-time Load Distribution</h3>
-              <span className="bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                LIVE FEED
-              </span>
             </div>
             <div className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -179,8 +166,8 @@ export default function SniperDashboard() {
 
 function StatCard({ title, value, icon, change }: any) {
   return (
-    <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl relative overflow-hidden group p-6 transition-all hover:border-orange-500/30">
-      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-500">{icon}</div>
+    <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl relative overflow-hidden group p-6">
+      <div className="absolute top-0 right-0 p-4 opacity-10">{icon}</div>
       <div className="space-y-2 relative z-10">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-tighter">{title}</p>
         <div className="flex items-baseline gap-2">

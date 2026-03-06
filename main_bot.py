@@ -1,32 +1,44 @@
 from playwright.sync_api import sync_playwright
-import csv
 import time
 import random
 
 class StoreBot:
     def __init__(self, csv_file="data.csv"):
-        self.csv_file = csv_file
+        pass # Ma n-s7a9ouch l'CSV f' l'Cloud, n-génériw la data direct
 
-    def get_user_data(self):
-        try:
-            with open(self.csv_file, mode='r', encoding='utf-8') as f:
-                return list(csv.DictReader(f))
-        except:
-            print("❌ Fichier data.csv introuvable !")
-            return []
+    def get_user_data(self, count):
+        # Génération ta3 Data éducative f' l'RAM (Parfait pour le Cloud)
+        users = []
+        wilayas = ["Alger", "Oran", "Constantine", "Annaba", "Setif"]
+        for i in range(count):
+            users.append({
+                "nom": f"Test Edu {random.randint(100, 999)}",
+                "telephone": f"055{random.randint(1000000, 9999999)}",
+                "wilaya": random.choice(wilayas),
+                "adresse": f"Cite Test {random.randint(1, 100)}, {random.choice(wilayas)}"
+            })
+        return users
 
     def execute_stress_test(self, url, max_orders=5):
-        users = self.get_user_data()
+        users = self.get_user_data(max_orders)
         if not users: return
 
         print(f"\n🚀 DÉMARRAGE DU BOT SUR : {url}")
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-setuid-sandbox"]) 
+            # FIX RENDER : Lazem headless=True w les args ta3 Linux bach ma y-plantach
+            browser = p.chromium.launch(
+                headless=True, 
+                args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+            ) 
             
             for i in range(max_orders):
                 user = users[i]
-                context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0")
+                # Stealth Mode bach y-ban kima PC vrai f' l'Cloud
+                context = browser.new_context(
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0",
+                    viewport={"width": 1920, "height": 1080}
+                )
                 page = context.new_page()
                 
                 print("-" * 50)
@@ -38,39 +50,23 @@ class StoreBot:
                         page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
                         time.sleep(1)
 
-                    # ==========================================
                     # A. Le Nom
-                    # ==========================================
                     name_input = page.locator("input[name='first_name'], input[name='name'], input[placeholder*='اسم' i], input[placeholder*='nom' i]").first
                     if name_input.count() > 0:
                         name_input.scroll_into_view_if_needed()
                         name_input.fill(user["nom"])
                     
-                    # ==========================================
-                    # B. Le Téléphone (LE FIX INTELLIGENT HNA 🧠)
-                    # ==========================================
+                    # B. Le Téléphone
                     phone_input = page.locator("input[name='phone'], input[type='tel'], input[placeholder*='هاتف' i], input[placeholder*='téléphone' i]").first
                     if phone_input.count() > 0:
                         phone_input.scroll_into_view_if_needed()
-                        
-                        # 1. N-ssagmo l'numéro ida kan fih 9 ar9am brk (Fix ta3 l'CSV)
-                        phone_number = user["telephone"]
-                        if len(phone_number) == 9:
-                            phone_number += str(random.randint(0, 9)) # Nzidou ra9m bach yweli 10 exact
-                        
-                        # 2. N-naqiw l'khana b'JavaScript (Plus fiable)
                         phone_input.evaluate("el => el.value = ''") 
-                        
-                        # 3. N-tapiw b'la3qel w n-dirou Blur (bach YouCan y-dir la validation vert)
                         phone_input.click()
-                        phone_input.press_sequentially(phone_number, delay=50)
-                        phone_input.blur() # HADI HIYA LI T-CONFIRMI L'NUMÉRO F' YOUCAN
-                        
-                        print(f"   📱 Téléphone injecté : {phone_number}")
+                        phone_input.press_sequentially(user["telephone"], delay=50)
+                        phone_input.blur()
+                        print(f"   📱 Téléphone injecté : {user['telephone']}")
 
-                    # ==========================================
                     # C. La Wilaya
-                    # ==========================================
                     wilaya_input = page.locator("input[placeholder*='ولاية' i], select[name*='city'], input[name*='extra_fields']").first
                     if wilaya_input.count() > 0:
                         wilaya_input.scroll_into_view_if_needed()
@@ -79,9 +75,7 @@ class StoreBot:
                         else:
                             wilaya_input.fill(user["wilaya"])
 
-                    # ==========================================
                     # D. La Commune / Adresse
-                    # ==========================================
                     commune_input = page.locator("input[placeholder*='بلدية' i], input[name='city'], input[placeholder*='عنوان' i]").first
                     if commune_input.count() > 0:
                         commune_input.scroll_into_view_if_needed()
@@ -91,9 +85,8 @@ class StoreBot:
 
                     time.sleep(1) 
 
-                    # ==========================================
-                    # LE CLIC ET LA VÉRIFICATION 
-                    # ==========================================
+                    # LE CLIC ET LA VÉRIFICATION
+                    print("   🖱️ Clic sur 'Commander'...")
                     submit_btn = page.locator("button:has-text('شراء'), button:has-text('طلب'), button:has-text('تأكيد'), button:has-text('Commander'), input[type='submit']").last
                     if submit_btn.count() == 0:
                         submit_btn = page.locator("button").last
@@ -111,7 +104,7 @@ class StoreBot:
                     if url_apres != url_avant or "thank" in url_apres or "شكرا" in page_text or "merci" in page_text:
                         print(f"   🟢 [RÉSULTAT {i+1}] : LA COMMANDE EST PASSÉE AVEC SUCCÈS !")
                     else:
-                        print(f"   🔴 [RÉSULTAT {i+1}] : ÉCHEC DE LA COMMANDE (Vérifie si y a un captcha).")
+                        print(f"   🔴 [RÉSULTAT {i+1}] : ÉCHEC DE LA COMMANDE.")
 
                 except Exception as e:
                     print(f"   🔴 [ERREUR TECHNIQUE {i+1}] : {str(e)}")
@@ -120,15 +113,7 @@ class StoreBot:
                 
                 # Pause pour pas bloquer le serveur
                 if i < max_orders - 1:
-                    pause_time = random.randint(10, 15)
-                    print(f"   💤 Pause de {pause_time} sec...")
-                    time.sleep(pause_time)
+                    time.sleep(random.randint(5, 10))
             
             browser.close()
             print("\n🏁 TOUTES LES COMMANDES SONT TERMINÉES.")
-
-if __name__ == "__main__":
-    URL_A_TESTER = "https://luxury-shopping-dz.youcan.store/pages/hlo-asbany-hamd" 
-    
-    bot = StoreBot()
-    bot.execute_stress_test(url=URL_A_TESTER, max_orders=5)
