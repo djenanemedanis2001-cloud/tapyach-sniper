@@ -22,7 +22,7 @@ class StoreBot:
         print(f"\n🚀 DÉMARRAGE DU BOT SUR : {url}")
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False) 
+            browser = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-setuid-sandbox"]) 
             
             for i in range(max_orders):
                 user = users[i]
