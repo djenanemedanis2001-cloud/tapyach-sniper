@@ -1,0 +1,29 @@
+# Python w Les Fichiers M-compiliyine
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Dossiers inutiles
+backend/dist/
+backend/interface/
+backend/saas-dashboard/
+frontend/
+
+# Les fichiers EXE w ZIP
+*.exe
+*.zip
+*.log
+*.bat.txt
+*.txt
+
+# Next.js / Node
+saas-dashboard/.next/
+saas-dashboard/node_modules/
+node_modules/
