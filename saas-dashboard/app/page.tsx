@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, ShoppingCart, Crosshair, Users, Settings, 
-  Search, Bell, Activity, DollarSign, Package, ArrowUpRight, Target, Zap, ServerCrash, CheckCircle2, ShieldAlert
+  Search, Bell, Activity, DollarSign, Package, ArrowUpRight, 
+  Target, Zap, ServerCrash, CheckCircle2, ShieldAlert, Rocket
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
