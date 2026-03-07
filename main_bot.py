@@ -31,7 +31,7 @@ class StoreBot:
         users = self.get_user_data(max_orders)
         if not users: return
 
-        log(f"\n🚀 DÉMARRAGE DU BOT (STEALTH CLOUD) SUR : {url}")
+        log(f"\n🚀 DÉMARRAGE DU BOT (STEALTH CLOUD - ANTI-OOM) SUR : {url}")
 
         with sync_playwright() as p:
             browser = p.chromium.launch(
@@ -49,6 +49,8 @@ class StoreBot:
             
             for i in range(max_orders):
                 user = users[i]
+                
+                # ⚠️ FIX RAM: Nouveau contexte pour CHAQUE commande
                 context = browser.new_context(
                     user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                     viewport={"width": 1920, "height": 1080}
@@ -121,17 +123,27 @@ class StoreBot:
                         if "thank" in url_apres or "شكرا" in page_text or "merci" in page_text or "success" in page_text or "receipt" in url_apres:
                             log(f"   🟢 [RÉSULTAT {i+1}] : COMMANDE VALIDÉE ET ENVOYÉE 100% !")
                         else:
-                            log(f"   🔴 [RÉSULTAT {i+1}] : ÉCHEC. Bloqué par l'anti-bot du site (Cloudflare).")
+                            log(f"   🔴 [RÉSULTAT {i+1}] : ÉCHEC. Bloqué par l'anti-bot du site.")
                     else:
                         log(f"   🔴 [ERREUR] Bouton invisible.")
 
                 except Exception as e:
                     log(f"   🔴 [ERREUR TECHNIQUE {i+1}] : {str(e)}")
                 finally:
-                    context.close() 
+                    # ⚠️ FIX RAM: Fermer explicitement la page et le contexte
+                    try:
+                        page.close()
+                        context.close() 
+                    except:
+                        pass
                 
                 if i < max_orders - 1:
+                    log(f"   💤 Nettoyage RAM en cours... Pause 5s.")
                     time.sleep(random.randint(4, 7))
             
             browser.close()
             log("\n🏁 MISSION TERMINÉE.")
+
+if __name__ == "__main__":
+    bot = StoreBot()
+    bot.execute_stress_test("https://libyaworld.youcan.store/products/salatlibia", max_orders=2)
