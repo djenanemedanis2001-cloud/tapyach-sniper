@@ -1,195 +1,182 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Rocket, ShieldAlert, CheckCircle2, Zap, BarChart3, Globe } from 'lucide-react';
-import { AreaChart, Area, Tooltip, ResponsiveContainer } from 'recharts';
+import { Rocket, ShieldAlert, CheckCircle2, Zap, Globe, TerminalSquare, Activity } from 'lucide-react';
 
-const mockData = [
-  { name: '10:00', orders: 12 },
-  { name: '10:05', orders: 45 },
-  { name: '10:10', orders: 25 },
-  { name: '10:15', orders: 80 },
-  { name: '10:20', orders: 60 },
-];
-
-export default function SniperDashboard() {
+export default function AdvancedGhostDashboard() {
+  const [mounted, setMounted] = useState(false);
   const [url, setUrl] = useState('');
-  const [orders, setOrders] = useState(5);
+  const [orders, setOrders] = useState(1);
+  const [credits, setCredits] = useState(50);
   const [isLaunching, setIsLaunching] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState("READY");
+  const [liveLogs, setLiveLogs] = useState<{time: string, text: string, type: string}[]>([
+    { time: new Date().toLocaleTimeString(), text: 'SYSTEM READY. AWAITING TARGET.', type: 'system' }
+  ]);
+  
+  const logsEndRef = useRef<HTMLDivElement>(null);
 
-  const handleLaunch = async () => {
-    if (!url) return alert("⚠️ Entrez l'URL de la cible d'abord !");
-    
-    setIsLaunching(true);
-    setProgress(0);
-    setStatus("IN_PROGRESS");
+  // Auto-scroll l'Logs ta3 l'Terminal
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [liveLogs]);
 
-    try {
-      // HNA L'CÂBLE S7I7 LI Y-RBET M3A RENDER (API)
-      const res = await fetch('https://tapyach-api.onrender.com/launch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url, orders: orders })
-      });
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-      if (res.ok) {
-        setStatus("SUCCESS");
-        // Animation ta3 l'Barre Orange
-        let interval = setInterval(() => {
-          setProgress((prev) => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              setIsLaunching(false);
-              return 100;
-            }
-            return prev + 2;
-          });
-        }, 200);
-      } else {
-        setStatus("FAILED");
-        setIsLaunching(false);
-      }
-    } catch (err) {
-      alert("❌ Serveur API Hors-ligne. Vérifiez les logs sur Render.");
-      setStatus("FAILED");
-      setIsLaunching(false);
-    }
+  const addLog = (text: string, type: string = 'info') => {
+    setLiveLogs(prev => [...prev, { time: new Date().toLocaleTimeString(), text, type }]);
   };
 
+  const handleLaunch = () => {
+    if (!url || !url.includes('http')) return alert("⚠️ Entrez une URL de produit valide (ex: https://...) !");
+    if (credits < orders) return alert("❌ Crédits insuffisants !");
+    
+    setIsLaunching(true);
+    setCredits(prev => prev - orders);
+    setLiveLogs([]); // Clear logs
+    addLog(`INITIALIZING STRIKE SEQUENCE ON: ${url}`, 'system');
+
+    // 🚀 THE LIVE CABLE (Server-Sent Events)
+    // N-connectiw m3a l'API l'jdida ta3 Render bach t-jib l'ktiba f' l'waqt s7i7
+    const eventSource = new EventSource(`https://tapyach-api.onrender.com/stream?url=${encodeURIComponent(url)}&orders=${orders}`);
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      if (data.type === 'detail') {
+        addLog(`[PAYLOAD] Data générée -> ${data.msg}`, 'success');
+      } else if (data.type === 'error') {
+        addLog(`[FATAL] ${data.msg}`, 'error');
+        eventSource.close();
+        setIsLaunching(false);
+      } else if (data.type === 'success') {
+        addLog(`[MISSION COMPLETE] Toutes les commandes sont passées.`, 'success');
+        eventSource.close();
+        setIsLaunching(false);
+      } else {
+        addLog(data.msg, 'info');
+      }
+    };
+
+    eventSource.onerror = () => {
+      addLog(`[WARNING] Connexion Live coupée. Le Bot continue en arrière-plan.`, 'error');
+      eventSource.close();
+      setIsLaunching(false);
+    };
+  };
+
+  if (!mounted) return null;
+
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-4 md:p-8 font-sans selection:bg-orange-500/30">
-      <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* --- HEADER --- */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-8">
-          <div>
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2">
-              <div className="bg-orange-600 p-2 rounded-lg shadow-[0_0_15px_rgba(234,88,12,0.4)]">
-                <Zap size={24} fill="white" />
-              </div>
-              <h1 className="text-3xl font-black tracking-tighter uppercase italic">Tapyach <span className="text-orange-600">Sniper</span></h1>
-            </motion.div>
-            {/* V4.1 BACH N-FORCIW VERCEL Y-TBDEL */}
-            <p className="text-slate-500 text-sm mt-2 font-medium">Educational Load Testing System v4.1</p>
-          </div>
-          
-          <div className="flex items-center gap-3 bg-white/5 p-1.5 rounded-2xl border border-white/10">
-            <span className="bg-orange-600/10 text-orange-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
-              50 FREE CREDITS
-            </span>
-            <button className="bg-white text-black hover:bg-slate-200 font-bold rounded-xl px-6 py-2 transition-all active:scale-95 text-sm">
-              UPGRADE PRO
-            </button>
-          </div>
-        </header>
-
-        {/* --- MAIN STATS --- */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard title="Total Injections" value="1,284" icon={<Rocket className="text-orange-500" />} change="+12% today" />
-          <StatCard title="Success Rate" value="99.2%" icon={<CheckCircle2 className="text-emerald-500" />} change="Perfect sync" />
-          <StatCard title="Bypassed Shields" value="482" icon={<ShieldAlert className="text-blue-500" />} change="Anti-bot active" />
+    <div dir="rtl" className="min-h-screen bg-[#050505] text-white font-sans selection:bg-orange-500/30 font-mono">
+      
+      {/* Navbar Cyberpunk */}
+      <nav className="border-b border-orange-500/20 bg-black/80 backdrop-blur-md px-6 py-4 flex justify-between items-center" dir="ltr">
+        <div className="flex items-center gap-3">
+          <Zap size={24} className="text-orange-500 animate-pulse" />
+          <h1 className="text-2xl font-black tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600">
+            GHOST<span className="text-white">ORDER.AI</span>
+          </h1>
         </div>
+        <div className="flex items-center gap-3 bg-orange-950/30 px-5 py-2 rounded-md border border-orange-500/30">
+          <Activity size={16} className="text-orange-500" />
+          <span className="text-xs font-bold text-gray-300">CRÉDITS :</span>
+          <span className="text-orange-500 font-black text-lg">{credits}</span>
+        </div>
+      </nav>
 
-        {/* --- CONTROL CENTER --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          <div className="lg:col-span-1 bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            
-            <div className="flex items-center gap-2 mb-6">
-              <Globe size={18} className="text-orange-500"/> 
-              <h3 className="text-lg font-bold">Target Configuration</h3>
+      <main className="max-w-7xl mx-auto p-6 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* --- LE RADAR (GAUCHE) --- */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-8 shadow-2xl relative">
+            <div className="flex items-center gap-2 mb-8 border-b border-white/10 pb-4">
+              <Target size={20} className="text-orange-500"/> 
+              <h3 className="text-xl font-bold tracking-widest text-gray-200">TARGET ACQUISITION</h3>
             </div>
 
-            <div className="space-y-6 relative">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Store Product URL</label>
+            <div className="space-y-8">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-orange-500/70 uppercase tracking-widest" dir="ltr">Product URL (YouCan / Shopify)</label>
                 <input 
-                  type="text"
-                  placeholder="https://youcan.shop/product-link..." 
-                  className="w-full bg-black border border-white/10 focus:ring-2 focus:ring-orange-600/50 outline-none transition-all h-12 rounded-xl text-white px-4 text-sm"
+                  type="text" dir="ltr"
+                  placeholder="https://store.com/product-1" 
+                  className="w-full bg-black border border-white/10 focus:border-orange-500 outline-none h-14 rounded-lg text-white px-4 text-sm font-mono transition-colors"
                   value={url} onChange={(e) => setUrl(e.target.value)}
+                  disabled={isLaunching}
                 />
               </div>
               
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Traffic Intensity (Orders)</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-orange-500/70 uppercase tracking-widest" dir="ltr">Stress Load (Orders)</label>
                 <input 
-                  type="number"
-                  min="1"
-                  className="w-full bg-black border border-white/10 focus:ring-2 focus:ring-orange-600/50 outline-none transition-all h-12 rounded-xl text-white px-4 text-sm"
+                  type="number" min="1" max={credits} dir="ltr"
+                  className="w-full bg-black border border-white/10 focus:border-orange-500 outline-none h-14 rounded-lg text-white px-4 text-sm font-mono transition-colors"
                   value={orders} onChange={(e) => setOrders(Number(e.target.value))}
+                  disabled={isLaunching}
                 />
               </div>
 
               <button 
                 onClick={handleLaunch}
-                disabled={isLaunching || !url}
-                className="w-full h-14 mt-2 bg-orange-600 hover:bg-orange-500 text-black text-lg font-black rounded-xl shadow-[0_10px_20px_rgba(234,88,12,0.2)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLaunching || !url || credits === 0}
+                className="w-full h-16 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white text-lg font-black tracking-widest rounded-lg shadow-[0_0_20px_rgba(234,88,12,0.4)] transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center gap-3 uppercase"
               >
-                {isLaunching ? 'SYSTEM ATTACKING...' : 'LAUNCH SNIPER'}
+                {isLaunching ? (
+                  <> <Zap className="animate-ping" size={20}/> STRIKING... </>
+                ) : (
+                  <> EXECUTE STRIKE <Rocket size={20} /> </>
+                )}
               </button>
-
-              {isLaunching && (
-                <div className="space-y-2 mt-4 animate-in fade-in duration-500">
-                  <div className="flex justify-between text-[10px] font-bold text-orange-500 uppercase">
-                    <span>Injecting Packets...</span>
-                    <span>{progress}%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-orange-500 transition-all duration-200 ease-out" 
-                      style={{ width: `${progress}%` }} 
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* --- ANALYTICS CHART --- */}
-          <div className="lg:col-span-2 bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 overflow-hidden relative">
-            <div className="flex justify-between items-center mb-8">
-              <h3 className="font-bold flex items-center gap-2"><BarChart3 size={18} className="text-orange-500"/> Real-time Load Distribution</h3>
-              <span className="bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                LIVE FEED
-              </span>
-            </div>
-            <div className="h-[250px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockData}>
-                  <defs>
-                    <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ea580c" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#ea580c" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Tooltip contentStyle={{backgroundColor: '#000', border: '1px solid #333', borderRadius: '8px'}} />
-                  <Area type="monotone" dataKey="orders" stroke="#ea580c" strokeWidth={3} fillOpacity={1} fill="url(#colorOrders)" />
-                </AreaChart>
-              </ResponsiveContainer>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
 
-function StatCard({ title, value, icon, change }: any) {
-  return (
-    <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl relative overflow-hidden group p-6 transition-all hover:border-orange-500/30">
-      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-500">{icon}</div>
-      <div className="space-y-2 relative z-10">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-tighter">{title}</p>
-        <div className="flex items-baseline gap-2">
-          <h2 className="text-3xl font-black">{value}</h2>
-          <span className="text-[10px] text-slate-400 font-bold">{change}</span>
+        {/* --- LE TERMINAL LIVE (DROITE) --- */}
+        <div className="lg:col-span-7 bg-black border border-white/10 rounded-xl overflow-hidden flex flex-col shadow-2xl relative">
+          {/* Ligne rouge l'fo9 (Style Hacker) */}
+          <div className="h-1 w-full bg-gradient-to-r from-orange-500 to-red-600"></div>
+          
+          <div className="bg-[#111] px-4 py-3 flex items-center justify-between border-b border-white/5" dir="ltr">
+            <div className="flex items-center gap-2">
+              <TerminalSquare size={16} className="text-gray-400" />
+              <span className="text-xs font-bold text-gray-400 tracking-widest uppercase">Live Command Feed</span>
+            </div>
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-500/50"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500/50"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500/50"></div>
+            </div>
+          </div>
+          
+          {/* Écran d'affichage des Logs */}
+          <div className="flex-1 p-6 overflow-y-auto h-[400px] text-left" dir="ltr">
+            <div className="space-y-2">
+              {liveLogs.map((log, index) => (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                  key={index} 
+                  className="text-sm font-mono"
+                >
+                  <span className="text-gray-600 mr-3">[{log.time}]</span>
+                  <span className={`
+                    ${log.type === 'system' ? 'text-blue-400 font-bold' : ''}
+                    ${log.type === 'info' ? 'text-gray-300' : ''}
+                    ${log.type === 'success' ? 'text-green-500 font-bold' : ''}
+                    ${log.type === 'error' ? 'text-red-500 font-bold' : ''}
+                  `}>
+                    {log.type === 'system' ? '> ' : ''}{log.text}
+                  </span>
+                </motion.div>
+              ))}
+              <div ref={logsEndRef} />
+            </div>
+          </div>
         </div>
-      </div>
+
+      </main>
     </div>
   );
 }
