@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -6,7 +6,6 @@ from main_bot import StoreBot
 
 app = FastAPI(title="Sniper SaaS API")
 
-# N-khalou l'Interface tahder m3a l'API bla mochkil ta3 Sécurité
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,22 +18,26 @@ class MissionRequest(BaseModel):
     url: str
     orders: int = 5
 
-def execute_mission(target_url: str, orders_count: int):
-    print(f"⚙️ [MISSION] Démarrage du Sniper sur {target_url}...")
+@app.post("/launch")
+def launch_sniper(request: MissionRequest):
+    print(f"⚙️ [MISSION] Démarrage du Sniper sur {request.url} pour {request.orders} commandes...")
+    
+    # ⚠️ L'ASTUCE ICI: N-khaliw l'API t-stena l'Bot 7ata y-kamel ga3 l'Boucle qbel ma n-rodou l'Vercel.
     try:
         bot = StoreBot(csv_file="data.csv")
-        bot.execute_stress_test(url=target_url, max_orders=orders_count)
+        bot.execute_stress_test(url=request.url, max_orders=request.orders)
         print("✅ [MISSION] Terminé avec succès.")
+        
+        return {
+            "status": "success",
+            "message": f"🚀 Missiles lancés: {request.orders} commandes sur {request.url}"
+        }
     except Exception as e:
         print(f"❌ [MISSION] Erreur Critique: {e}")
-
-@app.post("/launch")
-def launch_sniper(request: MissionRequest, bg_tasks: BackgroundTasks):
-    bg_tasks.add_task(execute_mission, request.url, request.orders)
-    return {
-        "status": "success",
-        "message": f"🚀 Missiles lancés sur {request.url}"
-    }
+        return {
+            "status": "error",
+            "message": f"Erreur: {str(e)}"
+        }
 
 if __name__ == "__main__":
     print("🌐 Serveur SNIPER API actif sur le port 8000...")
